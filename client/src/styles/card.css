@@ -1,0 +1,172 @@
+/* ===== Grid：响应式网格 ===== */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 20px;
+}
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+}
+
+/* ===== Card Base ===== */
+.card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* 固定比例媒体区（统一外观） */
+.card__media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #f3f4f6;
+    overflow: hidden;
+}
+@supports not (aspect-ratio: 1 / 1) {
+    .card__media {
+        height: 180px;
+    }
+}
+.card__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 左上角 成色徽章 */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+.badge--cond {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    color: #fff;
+    opacity: 1;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+    z-index: 5;
+}
+.badge--cond.is-new  { background: #16a34a; } /* green-600 */
+.badge--cond.is-like { background: #0ea5e9; } /* sky-500 */
+.badge--cond.is-good { background: #f59e0b; } /* amber-500 */
+.badge--cond.is-fair { background: #d97706; } /* amber-600 */
+.badge--cond.is-poor { background: #dc2626; } /* red-600 */
+
+/* Body */
+.card__body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.card__title {
+    font-weight: 700;
+    margin: 0;
+    font-size: 16px;
+    color: #111827;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.subtle {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 底部一行：分类 + 价格 */
+.card__metaRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 2px;
+}
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 12px;
+    line-height: 18px;
+    background: #f3f4f6;
+    color: #374151;
+}
+.chip--cat {
+    background: #eef2ff;
+    color: #4338ca;
+}
+
+/* 价格强调 */
+.card__price {
+    font-weight: 700;
+    font-size: 16px;
+    color: #b5121b;
+    letter-spacing: 0.2px;
+}
+
+/* 已售出状态 */
+.card--sold {
+    cursor: not-allowed;
+}
+.card--sold .card__img {
+    filter: grayscale(100%);
+}
+.card__soldOverlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.card__soldTag {
+    font-weight: 900;
+    font-size: 18px;
+    color: #fff !important;
+    background: rgba(0, 0, 0, 0.55);
+    border: 2px solid #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+}
+
+/* 链接去样式 */
+.card,
+.card:link,
+.card:visited,
+.card:hover,
+.card:active {
+    text-decoration: none !important;
+    color: inherit !important;
+}
+.card__body a {
+    text-decoration: none !important;
+    color: inherit !important;
+}

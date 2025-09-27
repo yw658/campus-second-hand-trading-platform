@@ -1,0 +1,139 @@
+/* 页面根：左对齐 + 全宽，不再居中窄列 */
+.orders-page{
+    width:100% !important;
+    padding: 0 48px 56px !important;   /* 页面左右留白 */
+    margin: 16px 0 0 0 !important;
+    text-align: initial !important;
+}
+
+.orders-title{
+    font-size:22px;
+    font-weight:900;
+    margin: 8px 0 16px;
+}
+
+/* 列表：让子项撑满 */
+.orders-list{
+    display:grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    width:100% !important;
+    justify-items: stretch !important;
+}
+
+/* 卡片：变长、铺满一行 */
+.order-card{
+    width:100% !important;
+    display:grid;
+    grid-template-columns: 96px 1fr minmax(140px, 260px); /* ✅ 更长的右列 */
+    gap:14px;
+    align-items:center;
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:14px 16px;
+    box-shadow:0 6px 22px rgba(0,0,0,.06);
+    transition: box-shadow .2s ease;
+}
+.order-card:hover{ box-shadow:0 10px 26px rgba(0,0,0,.10); }
+
+/* 左侧缩略图 */
+.order-thumb img{
+    width:96px; height:96px; object-fit:cover;
+    border-radius:12px; border:1px solid #e5e7eb; display:block;
+}
+
+.order-center{ min-width:0; }
+.order-title-row{ display:flex; align-items:center; gap:10px; }
+.order-title{ font-weight:800; color:#111827; text-decoration:none; }
+.order-title:hover{ text-decoration:underline; }
+
+.order-sub{ color:#6b7280; margin-top:4px; font-size:13px; }
+.order-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+
+/* 右侧金额：贴右对齐 */
+.order-price{
+    justify-self:end;          /* ✅ 栅格内靠右 */
+    text-align:right;
+    font-weight:900;
+    font-size:16px;
+    color:#b5121b;
+}
+
+/* 徽章 */
+.order-badge{
+    font-size:12px; border-radius:999px; padding:2px 8px; border:1px solid #e5e7eb;
+}
+.order-badge--created   { background:#fff7ed; color:#b45309; border-color:#fb923c; }
+.order-badge--completed { background:#ecfdf5; color:#047857; border-color:#34d399; }
+.order-badge--cancelled { background:#fef2f2; color:#b91c1c; border-color:#fca5a5; }
+
+/* 按钮 */
+.btn{
+    border:1px solid #e5e7eb; background:#fff; color:#111827;
+    border-radius:10px; padding:6px 12px; height:34px;
+    font-weight:800; font-size:13px; cursor:pointer; transition:.2s ease;
+}
+.btn:hover{ background:#f9fafb; }
+.btn--primary{ background:#b5121b; border-color:#b5121b; color:#fff; }
+.btn--primary:hover{ background:#8f0e18; border-color:#8f0e18; }
+.btn--ghost{ background:transparent; color:#b5121b; border-color:#b5121b; }
+.btn--ghost:hover{ background:#fde7ea; color:#8f0e18; border-color:#8f0e18; }
+
+/* 已评价标签 */
+.order-reviewed{
+    font-size:13px;
+    font-weight:700;
+    color:#6b7280;
+    align-self:center;
+}
+
+/* 空状态 */
+.orders-empty{ color:#6b7280; padding:8px 2px; }
+
+/* 小屏优化 */
+@media (max-width: 840px){
+    .orders-page{ padding: 0 16px 40px !important; }
+    .order-card{ grid-template-columns: 80px 1fr; }
+    .order-price{ justify-self:start; margin-top:6px; }
+}
+
+/* ===== Review Modal 样式（评价弹窗） ===== */
+.rv-mask{
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,.35);
+    display: grid; place-items: center;
+    padding: 20px;
+}
+.rv-panel{
+    width: min(560px, 92vw);
+    background: #fff; border: 1px solid #e5e7eb;
+    border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    overflow: hidden;
+}
+.rv-head{
+    padding: 14px 16px; font-weight: 900;
+    border-bottom: 1px solid #f3f4f6; background: #fff;
+}
+.rv-body{
+    padding: 14px 16px; display: grid; gap: 10px;
+}
+.rv-label{ font-size: 13px; color: #374151; }
+.rv-textarea{
+    width: 100%; border:1px solid #e5e7eb; border-radius: 10px;
+    padding: 10px; outline: none; resize: vertical; min-height: 96px;
+}
+.rv-textarea:focus{ border-color:#b5121b; box-shadow:0 0 0 3px rgba(181,18,27,.12); }
+.rv-foot{
+    padding: 12px 16px; display: flex; gap: 10px; justify-content: flex-end;
+    border-top:1px solid #f3f4f6; background:#fff;
+}
+
+/* 星级交互 */
+.rv-stars{ display:flex; gap:6px; }
+.rv-star{
+    border:none; background:transparent; cursor:pointer;
+    font-size:22px; line-height:1; color:#e5e7eb; padding:0;
+}
+.rv-star.on{ color:#f59e0b; }
+.rv-star:focus{ outline:2px solid #b5121b33; border-radius:6px; }
