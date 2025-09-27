@@ -1,0 +1,73 @@
+/* 外层两栏：左侧菜单 + 右侧内容 */
+.pf-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+/* 左侧菜单 */
+.pf-sidebar {
+    background: #fff;
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pf-side-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 6px 0 2px;
+}
+.pf-side-item {
+    text-align: left;
+    font-size: 15px;
+    font-weight: 700;
+    background: none;
+    border: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.pf-side-item:hover { background: #f3f4f6; }
+.pf-side-item.is-active { background: var(--primary,#b5121b); color:#fff; }
+
+/* 右侧头部 */
+.pf-hero {
+    background:#fff;
+    border:1px solid var(--border,#e5e7eb);
+    border-radius:12px;
+    padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+}
+.pf-name { font-size:18px; font-weight:800; }
+.pf-sub { color:#6b7280; font-size:13px; margin-top:2px; }
+.pf-btn { border:1px solid var(--border,#e5e7eb); padding:6px 14px; border-radius:999px; cursor:pointer; }
+.pf-btn--primary { background:var(--primary,#b5121b); color:#fff; border-color:var(--primary,#b5121b); }
+
+/* 顶部 Tab */
+.pf-tabs { display:flex; gap:8px; margin:10px 0 20px; }
+.pf-tab {
+    background:#fff; border:1px solid var(--border,#e5e7eb);
+    padding:6px 10px; border-radius:10px; cursor:pointer; font-weight:600;
+}
+.pf-tab.is-active { background:#f9fafb; border-color:#d1d5db; }
+.pf-tab span { color:#6b7280; margin-left:6px; }
+
+/* 关键：网格容器 */
+.pf-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+/* 骨架 & 空状态 */
+.pf-skel { height: 240px; border:1px solid var(--border,#e5e7eb); border-radius:12px; background:linear-gradient(90deg,#eee 25%,#f5f5f5 37%,#eee 63%); background-size:400% 100%; animation:shimmer 1.2s infinite; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+.pf-empty { color:#6b7280; padding:24px 8px; }
+
+/* 让网格中的卡片更像卡片 */
+.pf-grid .card { width:100%; height:100%; display:flex; flex-direction:column; }
+.pf-grid .card__img { height:170px; object-fit:cover; }

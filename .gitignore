@@ -1,6 +1,17 @@
-node_modules/
+# env & keys
 .env
-*.log
+*.env
+server/.env
+client/.env
+*.pem
+*.key
+*.p12
+
+# dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# builds
 dist/
 build/
-.vscode/

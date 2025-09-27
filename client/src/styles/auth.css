@@ -1,0 +1,109 @@
+/* Fullscreen center */
+.auth-wrap {
+    min-height: calc(100dvh - 64px); /* leave room for navbar if any */
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: radial-gradient(1200px 600px at 10% -10%, #fff8e1 0%, transparent 55%),
+    radial-gradient(1000px 500px at 110% 0%, #ffe7ea 0%, transparent 50%),
+    #fafafa;
+}
+
+/* Card */
+.auth-card {
+    width: min(520px, 92vw);
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.08);
+}
+
+/* Header */
+.auth-head { text-align: center; margin-bottom: 16px; }
+.auth-logo {
+    font-weight: 900;
+    letter-spacing: .3px;
+    color: #b5121b;
+    margin-bottom: 6px;
+    font-size: 18px;
+}
+.auth-title {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1.2;
+    font-weight: 900;
+    color: #111827;
+}
+.auth-sub {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* Field */
+.auth-field { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.auth-label { font-size: 14px; font-weight: 800; color: #111827; }
+
+.auth-input {
+    height: 48px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px;
+    outline: none;
+    background: #fff;
+    font-size: 16px;
+}
+.auth-input:focus {
+    border-color: #b5121b;
+    box-shadow: 0 0 0 4px rgba(181,18,27,.12);
+}
+
+/* Button */
+.auth-btn {
+    width: 100%;
+    margin-top: 16px;
+    appearance: none;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #111827;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-weight: 900;
+    font-size: 16px;
+    cursor: pointer;
+    transition: box-shadow .15s ease, transform .03s ease, background .15s ease;
+}
+.auth-btn:active { transform: translateY(1px); }
+.auth-btn:hover  { box-shadow: 0 2px 16px rgba(0,0,0,.05); }
+
+.auth-btn--primary {
+    background: #b5121b;
+    border-color: #b5121b;
+    color: #fff;
+}
+.auth-btn--primary:hover { box-shadow: 0 8px 20px rgba(181,18,27,.22); }
+
+/* Footer */
+.auth-foot {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    color: #374151;
+}
+.auth-link {
+    color: #b5121b;
+    font-weight: 800;
+    text-decoration: none;
+}
+.auth-link:hover { text-decoration: underline; }
+
+/* Small screens */
+@media (max-width: 420px) {
+    .auth-title { font-size: 22px; }
+    .auth-input { height: 46px; font-size: 15px; }
+    .auth-btn   { font-size: 15px; }
+}
