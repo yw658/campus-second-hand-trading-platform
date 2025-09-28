@@ -12,6 +12,7 @@ const uploadRoutes = require('./routes/uploads');
 const convoRoutes = require('./routes/convos');
 const adminRoutes = require('./routes/admin');
 const reportRoutes = require('./routes/reports');
+const reviewsRouter = require('./routes/reviews');
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/convos', convoRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/reviews', reviewsRouter);
 
 app.get('/', (_req, res) => res.send('Backend working!'));
 
