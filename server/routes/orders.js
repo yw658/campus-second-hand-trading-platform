@@ -5,8 +5,9 @@ const router = express.Router();
 
 const Order = require('../models/Order');
 const Item = require('../models/Item');
-const Conversation = require('../models/Conversation'); // NEW
-const Message = require('../models/Message');           // NEW
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
+const Review = require('../models/Review'); // ⭐ 新增：用于计算 hasReviewed
 
 /**
  * Create order
@@ -57,7 +58,7 @@ router.post('/', async (req, res) => {
 
             await Message.create({
                 convoId: convo._id,
-                senderId: buyerOid, // triggered by buyer
+                senderId: buyerOid,
                 text: sysText,
                 readBy: [buyerOid],
                 isSystem: true,
@@ -79,7 +80,7 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * Buyer orders
+ * Buyer orders (+ hasReviewed for the current user)
  * GET /api/orders/user/:userId
  */
 router.get('/user/:userId', async (req, res) => {
@@ -88,13 +89,42 @@ router.get('/user/:userId', async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(userId)) {
             return res.status(400).json({ message: 'Invalid userId' });
         }
+        const buyerOid = new mongoose.Types.ObjectId(userId);
 
-        const orders = await Order.find({ buyerId: new mongoose.Types.ObjectId(userId) })
+        // 先把订单拉出来
+        const orders = await Order.find({ buyerId: buyerOid })
             .sort({ createdAt: -1 })
             .populate('itemId', 'title image images isSold price sellerId')
-            .populate('sellerId', 'username');
+            .populate('sellerId', 'username')
+            .lean();
 
-        res.json(orders);
+        // 把所有 itemId 收集并批量查询当前用户是否评过
+        const itemIds = Array.from(
+            new Set(
+                orders
+                    .map(o => o.itemId?._id || o.itemId)
+                    .filter(Boolean)
+                    .map(id => String(id))
+            )
+        ).map(id => new mongoose.Types.ObjectId(id));
+
+        let reviewedSet = new Set();
+        if (itemIds.length) {
+            const myReviews = await Review.find({
+                userId: buyerOid,
+                itemId: { $in: itemIds },
+                isHidden: { $ne: true },
+                isReported: { $ne: true },
+            }).select('itemId').lean();
+            reviewedSet = new Set(myReviews.map(r => String(r.itemId)));
+        }
+
+        const withFlag = orders.map(o => {
+            const itemId = String(o.itemId?._id || o.itemId || '');
+            return { ...o, hasReviewed: reviewedSet.has(itemId) };
+        });
+
+        res.json(withFlag);
     } catch (err) {
         console.error('Fetch user orders error:', err);
         res.status(500).json({ message: 'Failed to fetch orders' });
@@ -222,7 +252,7 @@ router.patch('/:id/cancel', async (req, res) => {
 
             await Message.create({
                 convoId: convo._id,
-                senderId: order.buyerId, // or sellerId if you prefer
+                senderId: order.buyerId,
                 text: sysText,
                 readBy: [order.buyerId],
                 isSystem: true,
