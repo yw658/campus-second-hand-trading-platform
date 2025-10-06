@@ -19,10 +19,7 @@ export default function MyFavorites() {
 
         (async () => {
             try {
-                // ✅ 注意：后端是 /api/favorites/:userId
-                const res = await fetch(`http://localhost:5002/api/favorites/${user._id}`, {
-                    // 你后端这个接口不强制鉴权，如果你需要可解开：
-                    // headers: { Authorization: `Bearer ${token}` },
+                const res = await fetch(`/api/favorites/${user._id}`, {
                 });
                 const data = await res.json();
                 setFavorites(Array.isArray(data) ? data : []);
@@ -37,7 +34,6 @@ export default function MyFavorites() {
 
     if (loading) return <p>Loading...</p>;
 
-    // 把 Favorite[] -> Item[]（有可能有空 itemId，比如商品被删）
     const items = (favorites || [])
         .map(f => f.itemId)
         .filter(Boolean);

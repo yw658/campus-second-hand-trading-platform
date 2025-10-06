@@ -1,10 +1,9 @@
-// client/src/pages/Home.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import ItemCard from '../components/ItemCard';
 import '../styles/card.css';
 import '../styles/home.css';
-import { belongsToCategory, normalizeCategory } from '../utils/categories';
+import { belongsToCategory } from '../utils/categories';
 
 const CATEGORIES = [
     { key: 'Books', label: 'Books', icon: '📚' },
@@ -161,21 +160,18 @@ export default function Home() {
     const isSearchMode = !!q.trim();
     const hasMore = page < pages;
 
-    // 搜索时清空分类
     useEffect(() => {
         if (q && activeCat) {
             setActiveCat('');
         }
-    }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [q]);
 
-    // 任一筛选变化时重置分页与数据
     useEffect(() => {
         setLoading(true);
         setPage(1);
         setItems([]);
     }, [q, activeCat, sort]);
 
-    // 拉数据
     useEffect(() => {
         let aborted = false;
 
@@ -188,13 +184,11 @@ export default function Home() {
 
                 const kw = q.trim();
                 if (kw) params.set('search', kw);
-                if (activeCat) params.set('category', normalizeCategory(activeCat));
+                if (activeCat) params.set('category', activeCat);
 
-                // 统一只设置一次 searchMode
-                const mode = activeCat ? 'exact' : (kw ? 'fuzzy' : '');
-                if (mode) params.set('searchMode', mode);
+                console.log('[GET /api/items] params=', params.toString());
 
-                const res = await fetch(`http://localhost:5002/api/items?${params.toString()}`);
+                const res = await fetch(`/api/items?${params.toString()}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
 
@@ -224,9 +218,8 @@ export default function Home() {
         return () => {
             aborted = true;
         };
-    }, [page, q, activeCat, sort]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [page, q, activeCat, sort]);
 
-    // 快捷搜索：清空分类并跳转
     const pickChip = (word) => {
         setActiveCat('');
         navigate({ pathname: '/', search: `?q=${encodeURIComponent(word)}` });
@@ -250,7 +243,7 @@ export default function Home() {
                                 setActiveCat(next);
                                 setQ('');
                                 navigate('/');
-                                window.scrollTo({ top: 0, behavior: 'smooth' }); // 回到顶部，体验更顺滑
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                         >
                             <span className="cat-icon">{c.icon}</span>

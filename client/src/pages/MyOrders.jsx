@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { fetchMyOrders, confirmReceived, cancelOrder } from '../api/orders';
 import '../styles/orders.css';
 
-/* ---------- 简易星级组件 ---------- */
 function StarsInput({ value = 5, onChange }) {
     return (
         <div className="rv-stars" role="radiogroup" aria-label="Rating">
@@ -15,15 +14,12 @@ function StarsInput({ value = 5, onChange }) {
                     aria-checked={n === value}
                     onClick={() => onChange?.(n)}
                     title={`${n} stars`}
-                >
-                    ★
-                </button>
+                >★</button>
             ))}
         </div>
     );
 }
 
-/* ---------- 评价弹窗 ---------- */
 function ReviewModal({ open, onClose, onSubmit, submitting }) {
     const [rating, setRating] = useState(5);
     const [comment, setComment] = useState('');
@@ -32,7 +28,6 @@ function ReviewModal({ open, onClose, onSubmit, submitting }) {
         if (open) {
             setRating(5);
             setComment('');
-            // 锁滚
             document.body.style.overflow = 'hidden';
             return () => { document.body.style.overflow = ''; };
         }
@@ -44,11 +39,9 @@ function ReviewModal({ open, onClose, onSubmit, submitting }) {
         <div className="rv-mask" role="dialog" aria-modal="true" aria-labelledby="rv-title">
             <div className="rv-panel">
                 <div className="rv-head" id="rv-title">Leave a review</div>
-
                 <div className="rv-body">
                     <label className="rv-label">Rating</label>
                     <StarsInput value={rating} onChange={setRating} />
-
                     <label className="rv-label">Comment (optional)</label>
                     <textarea
                         className="rv-textarea"
@@ -58,7 +51,6 @@ function ReviewModal({ open, onClose, onSubmit, submitting }) {
                         onChange={(e) => setComment(e.target.value)}
                     />
                 </div>
-
                 <div className="rv-foot">
                     <button className="btn" onClick={onClose} disabled={submitting}>Cancel</button>
                     <button
@@ -83,29 +75,34 @@ export default function MyOrders() {
     const userId = user?._id;
     const token = localStorage.getItem('token');
 
-    // 弹窗状态
     const [openReview, setOpenReview] = useState(false);
     const [reviewOrder, setReviewOrder] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
+    const extractItemId = (obj) => {
+        if (!obj) return null;
+        if (typeof obj === 'object' && obj._id) return String(obj._id);
+        return String(obj);
+    };
+
+    // 拉订单（后端已带 hasReviewed）
+    const loadOrders = async () => {
+        try {
+            setLoading(true);
+            const data = await fetchMyOrders(userId);
+            setOrders(Array.isArray(data) ? data : []);
+        } catch {
+            setOrders([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        (async () => {
-            try {
-                setLoading(true);
-                const data = await fetchMyOrders(userId);
-                setOrders(Array.isArray(data) ? data : []);
-            } catch {
-                setOrders([]);
-            } finally {
-                setLoading(false);
-            }
-        })();
+        if (userId) loadOrders();
     }, [userId]);
 
-    const reload = async () => {
-        const data = await fetchMyOrders(userId);
-        setOrders(Array.isArray(data) ? data : []);
-    };
+    const reload = loadOrders;
 
     const onConfirm = async (id) => {
         await confirmReceived(id);
@@ -119,12 +116,9 @@ export default function MyOrders() {
 
     const contactSeller = async (itemId) => {
         try {
-            const resp = await fetch('http://localhost:5002/api/convos', {
+            const resp = await fetch('/api/convos', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ itemId, buyerId: userId }),
             });
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -139,7 +133,6 @@ export default function MyOrders() {
     const badgeText = (st) =>
         ({ created: 'Pending', completed: 'Completed', cancelled: 'Cancelled' }[st] || st);
 
-    // 打开弹窗
     const openReviewModal = (order) => {
         setReviewOrder(order);
         setOpenReview(true);
@@ -150,19 +143,39 @@ export default function MyOrders() {
         if (!reviewOrder?._id) return;
         try {
             setSubmitting(true);
-            const res = await fetch(`http://localhost:5002/api/reviews/${reviewOrder._id}`, {
+            const itemId = extractItemId(reviewOrder.itemId);
+
+            const res = await fetch('/api/reviews', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rating, comment, buyerId: userId }),
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ itemId, rating, content: comment }),
             });
-            if (!res.ok) {
-                const msg = await res.text().catch(() => '');
-                throw new Error(msg || `HTTP ${res.status}`);
+
+            if (res.status === 201) {
+                setOpenReview(false);
+                setReviewOrder(null);
+                await reload();
+                return;
             }
-            // 乐观更新：标记 Reviewed
-            setOrders(list => list.map(o => o._id === reviewOrder._id ? { ...o, reviewed: true } : o));
-            setOpenReview(false);
-            setReviewOrder(null);
+
+            if (res.status === 409) {
+                const data = await res.json().catch(() => null);
+                if (data?.reviewId) {
+                    const upd = await fetch(`/api/reviews/${data.reviewId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ rating, content: comment }),
+                    });
+                    if (!upd.ok) throw new Error(`HTTP ${upd.status}`);
+                    setOpenReview(false);
+                    setReviewOrder(null);
+                    await reload();
+                    return;
+                }
+                throw new Error('You have already reviewed this item');
+            }
+
+            throw new Error(await res.text().catch(() => `HTTP ${res.status}`));
         } catch (e) {
             console.error('[MyOrders] review error:', e);
             alert(e.message || 'Failed to submit review');
@@ -186,7 +199,7 @@ export default function MyOrders() {
 
             {(orders || []).map((o) => {
                 const item = o.itemId || {};
-                const itemId = item?._id || o.itemId;
+                const itemId = extractItemId(item);
                 const canOperate = o.status === 'created';
                 const priceNum =
                     typeof o.price === 'number'
@@ -197,15 +210,17 @@ export default function MyOrders() {
 
                 return (
                     <div key={o._id} className="order-card">
-                        {/* Left: thumbnail */}
                         <Link to={`/items/${itemId}`} className="order-thumb">
                             <img
-                                src={item?.image || item?.images?.[0] || 'https://via.placeholder.com/80x80?text=Item'}
+                                src={
+                                    item?.image ||
+                                    item?.images?.[0] ||
+                                    'https://via.placeholder.com/80x80?text=Item'
+                                }
                                 alt={item?.title || 'item'}
                             />
                         </Link>
 
-                        {/* Center: title + time + actions */}
                         <div className="order-center">
                             <div className="order-title-row">
                                 <Link to={`/items/${itemId}`} className="order-title">
@@ -216,7 +231,9 @@ export default function MyOrders() {
                 </span>
                             </div>
 
-                            <div className="order-sub">{new Date(o.createdAt).toLocaleString()}</div>
+                            <div className="order-sub">
+                                {new Date(o.createdAt).toLocaleString()}
+                            </div>
 
                             <div className="order-actions">
                                 <button className="btn" onClick={() => contactSeller(itemId)}>
@@ -225,27 +242,35 @@ export default function MyOrders() {
 
                                 {canOperate && (
                                     <>
-                                        <button className="btn btn--primary" onClick={() => onConfirm(o._id)}>
+                                        <button
+                                            className="btn btn--primary"
+                                            onClick={() => onConfirm(o._id)}
+                                        >
                                             Confirm Received
                                         </button>
-                                        <button className="btn btn--ghost" onClick={() => onCancel(o._id)}>
+                                        <button
+                                            className="btn btn--ghost"
+                                            onClick={() => onCancel(o._id)}
+                                        >
                                             Cancel Order
                                         </button>
                                     </>
                                 )}
 
-                                {o.status === 'completed' && !o.reviewed && (
-                                    <button className="btn" onClick={() => openReviewModal(o)}>
+                                {o.status === 'completed' && !o.hasReviewed && (
+                                    <button
+                                        className="btn"
+                                        onClick={() => openReviewModal(o)}
+                                    >
                                         Leave a Review
                                     </button>
                                 )}
-                                {o.status === 'completed' && o.reviewed && (
+                                {o.status === 'completed' && o.hasReviewed && (
                                     <span className="order-reviewed">Reviewed</span>
                                 )}
                             </div>
                         </div>
 
-                        {/* Right: price */}
                         <div className="order-price">${priceNum.toFixed(2)}</div>
                     </div>
                 );
@@ -255,7 +280,6 @@ export default function MyOrders() {
                 <div style={{ color: '#6b7280', marginTop: 16 }}>No orders yet</div>
             )}
 
-            {/* Review Modal */}
             <ReviewModal
                 open={openReview}
                 onClose={() => setOpenReview(false)}

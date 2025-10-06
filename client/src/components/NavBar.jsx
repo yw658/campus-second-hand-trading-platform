@@ -27,7 +27,7 @@ export default function Navbar() {
             return;
         }
         try {
-            const r = await fetch('http://localhost:5002/api/convos/unread-count', {
+            const r = await fetch('/api/convos/unread-count', {
                 headers: { Authorization: `Bearer ${token}` },
             });
             const d = await r.json().catch(() => ({ count: 0 }));

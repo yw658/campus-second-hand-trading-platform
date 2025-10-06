@@ -1,11 +1,10 @@
-// client/src/pages/Chat.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import "../styles/chat.css";
 
 const READ_KEY = (id) => `wm.read.${id}`;
 const PLACEHOLDER_IMG = "https://via.placeholder.com/96x96.png?text=Item";
-const API = "http://localhost:5002";
+const API = "";
 
 function formatDate(d) {
     try { return new Date(d).toLocaleDateString(); } catch { return ""; }
@@ -64,7 +63,7 @@ export default function Chat() {
         const end = endRef.current;
         if (!wrap || !end) return;
 
-        const to = wrap.scrollHeight - wrap.clientHeight; // 明确到底部的最大 scrollTop
+        const to = wrap.scrollHeight - wrap.clientHeight;
         wrap.scrollTop = to;
         end.scrollIntoView({ block: "end", inline: "nearest" });
 
@@ -176,7 +175,6 @@ export default function Chat() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [convoId]);
 
-    /** 发送 */
     async function sendMessage() {
         const t = text.trim();
         if (!t || !convoId) return;
@@ -192,7 +190,6 @@ export default function Chat() {
             setMessages((prev) => [...prev, msg]);
             setText("");
 
-            // 会话置顶 & 更新摘要
             setConvos((prev) => {
                 const list = [...prev];
                 const idx = list.findIndex((c) => c._id === convoId);
@@ -212,7 +209,6 @@ export default function Chat() {
             setUnreadMap((m) => ({ ...m, [convoId]: 0 }));
             localStorage.setItem(READ_KEY(convoId), new Date().toISOString());
 
-            // 发送后立即贴底
             forceScrollToBottom();
         } catch (e) {
             console.error("[Chat] send message error:", e);
@@ -221,7 +217,6 @@ export default function Chat() {
     }
     const onKeyDown = (e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendMessage());
 
-    /** 滚动监听：是否在底部 */
     const onScroll = () => {
             const wrap = msgsWrapRef.current;
             const end = endRef.current;
@@ -233,7 +228,6 @@ export default function Chat() {
             setAtBottom(isBottom);
         };
 
-    /** 输入框自适应高度时，如果本就在底部，则继续贴底 */
     useEffect(() => {
         const ta = taRef.current;
         if (!ta) return;
@@ -249,7 +243,6 @@ export default function Chat() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [atBottom]);
 
-    /** 消息数量变化：如果在底部则贴底 */
     useEffect(() => {
         if (atBottom) forceScrollToBottom();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -269,7 +262,6 @@ export default function Chat() {
 
     return (
         <div className="chat-page">
-            {/* 左侧 */}
             <aside className="chat-sidebar">
                 <div className="chat-sidebar-header">
                     <h3>
@@ -318,7 +310,6 @@ export default function Chat() {
                 )}
             </aside>
 
-            {/* 右侧 */}
             <section className="chat-main">
                 {convoId && (
                     <div className="chat-sticky-header">

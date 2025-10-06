@@ -10,14 +10,13 @@ export default function Register() {
 
     const onSubmit = async (e) => {
         e.preventDefault();
-        const res = await fetch('http://localhost:5002/api/auth/register', {
+        const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, email, password }),
         });
         const data = await res.json();
         if (res.ok) {
-            // many backends just return message; to keep UX consistent, go to login page
             alert('Account created. Please log in.');
             nav('/login', { replace: true });
         } else {
@@ -38,7 +37,7 @@ export default function Register() {
                     <label className="auth-label">Username</label>
                     <input
                         className="auth-input"
-                        placeholder="e.g. winter123"
+                        placeholder="e.g. user123"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                     />

@@ -93,10 +93,10 @@ async function start() {
         // connect MongoDB
         await mongoose.connect(uri);
         console.log('[MongoDB] Connected.');
-
+        
         mongoose.connection.on('error', (e) => console.error('[MongoDB error]', e?.message || e));
         mongoose.connection.on('disconnected', () => console.warn('[MongoDB] disconnected'));
-
+        
         server = app.listen(PORT, () => console.log(`[HTTP] Server running on :${PORT}`));
     } catch (err) {
         console.error('[Startup Error]', err?.message || err);

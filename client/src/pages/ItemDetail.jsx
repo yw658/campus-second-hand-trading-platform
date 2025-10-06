@@ -1,4 +1,3 @@
-// client/src/pages/ItemDetail.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import ItemCard from '../components/ItemCard';
@@ -62,7 +61,7 @@ export default function ItemDetail() {
         (async () => {
             try {
                 setLoading(true);
-                const res = await fetch(`http://localhost:5002/api/items/${id}?userId=${userId || ''}`);
+                const res = await fetch(`/api/items/${id}?userId=${userId || ''}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 setItem(data);
@@ -75,10 +74,10 @@ export default function ItemDetail() {
 
                 const sid = data?.sellerId?._id || data?.sellerId;
                 if (sid) {
-                    const rUser = await fetch(`http://localhost:5002/api/users/${sid}`);
+                    const rUser = await fetch(`/api/users/${sid}`);
                     if (rUser.ok) setSeller(await rUser.json());
 
-                    const rActive = await fetch(`http://localhost:5002/api/items/seller/${sid}?status=active`);
+                    const rActive = await fetch(`/api/items/seller/${sid}?status=active`);
                     if (rActive.ok) {
                         const list = await rActive.json();
                         setSellerItems((list || []).filter((x) => x._id !== data._id).slice(0, 6));
@@ -111,7 +110,7 @@ export default function ItemDetail() {
             setBusyFav(true);
             const next = !isFavorited;
             setIsFavorited(next);
-            const resp = await fetch('http://localhost:5002/api/favorites', {
+            const resp = await fetch('/api/favorites', {
                 method: next ? 'POST' : 'DELETE',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ userId, itemId: item._id }),
@@ -128,7 +127,7 @@ export default function ItemDetail() {
         if (!ensureAuthed()) return;
         if (!item || item.isSold) return;
         try {
-            const resp = await fetch('http://localhost:5002/api/orders', {
+            const resp = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
                 body: JSON.stringify({ itemId: item._id, userId }),
@@ -144,7 +143,7 @@ export default function ItemDetail() {
         try {
             const itemIdToUse = item?._id || id;
             if (!itemIdToUse) return;
-            const resp = await fetch('http://localhost:5002/api/convos', {
+            const resp = await fetch('/api/convos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token || ''}` },
                 body: JSON.stringify({ itemId: itemIdToUse }),
@@ -163,7 +162,7 @@ export default function ItemDetail() {
         if (!item?._id) return;
         if (!window.confirm('Delete this item? This action cannot be undone.')) return;
         try {
-            const resp = await fetch(`http://localhost:5002/api/items/${item._id}`, {
+            const resp = await fetch(`/api/items/${item._id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

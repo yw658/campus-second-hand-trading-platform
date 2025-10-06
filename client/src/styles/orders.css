@@ -1,15 +1,17 @@
-/* 页面根：左对齐 + 全宽，不再居中窄列 */
+/* 页面根：左对齐 + 全宽 */
 .orders-page{
     width:100% !important;
-    padding: 0 48px 56px !important;   /* 页面左右留白 */
+    padding: 0 48px 56px !important;
     margin: 16px 0 0 0 !important;
     text-align: initial !important;
 }
 
-.orders-title{
-    font-size:22px;
-    font-weight:900;
-    margin: 8px 0 16px;
+/* 页面标题 */
+.orders-header{
+    font-size: 26px;
+    font-weight: 900;
+    margin: 12px 0 20px;
+    color: #111827;
 }
 
 /* 列表：让子项撑满 */
@@ -21,11 +23,11 @@
     justify-items: stretch !important;
 }
 
-/* 卡片：变长、铺满一行 */
+/* 卡片 */
 .order-card{
     width:100% !important;
     display:grid;
-    grid-template-columns: 96px 1fr minmax(140px, 260px); /* ✅ 更长的右列 */
+    grid-template-columns: 96px 1fr minmax(140px, 260px);
     gap:14px;
     align-items:center;
     background:#fff;
@@ -51,9 +53,9 @@
 .order-sub{ color:#6b7280; margin-top:4px; font-size:13px; }
 .order-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
 
-/* 右侧金额：贴右对齐 */
+/* 右侧金额 */
 .order-price{
-    justify-self:end;          /* ✅ 栅格内靠右 */
+    justify-self:end;
     text-align:right;
     font-weight:900;
     font-size:16px;
@@ -98,7 +100,7 @@
     .order-price{ justify-self:start; margin-top:6px; }
 }
 
-/* ===== Review Modal 样式（评价弹窗） ===== */
+/* ===== Review Modal 样式 ===== */
 .rv-mask{
     position: fixed; inset: 0; z-index: 1000;
     background: rgba(0,0,0,.35);
@@ -106,7 +108,7 @@
     padding: 20px;
 }
 .rv-panel{
-    width: min(560px, 92vw);
+    width: min(640px, 94vw);
     background: #fff; border: 1px solid #e5e7eb;
     border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.25);
     overflow: hidden;
@@ -116,24 +118,29 @@
     border-bottom: 1px solid #f3f4f6; background: #fff;
 }
 .rv-body{
-    padding: 14px 16px; display: grid; gap: 10px;
+    padding: 16px 18px; display: grid; gap: 12px;
 }
-.rv-label{ font-size: 13px; color: #374151; }
+.rv-label{
+    font-size: 14px; font-weight: 600; color: #374151;
+}
 .rv-textarea{
     width: 100%; border:1px solid #e5e7eb; border-radius: 10px;
-    padding: 10px; outline: none; resize: vertical; min-height: 96px;
+    padding: 14px; outline: none; resize: vertical; min-height: 160px;
+    font-size: 15px; line-height: 1.5;
 }
-.rv-textarea:focus{ border-color:#b5121b; box-shadow:0 0 0 3px rgba(181,18,27,.12); }
+.rv-textarea:focus{
+    border-color:#b5121b; box-shadow:0 0 0 3px rgba(181,18,27,.12);
+}
 .rv-foot{
     padding: 12px 16px; display: flex; gap: 10px; justify-content: flex-end;
     border-top:1px solid #f3f4f6; background:#fff;
 }
 
 /* 星级交互 */
-.rv-stars{ display:flex; gap:6px; }
+.rv-stars{ display:flex; gap:8px; }
 .rv-star{
     border:none; background:transparent; cursor:pointer;
-    font-size:22px; line-height:1; color:#e5e7eb; padding:0;
+    font-size:26px; line-height:1; color:#e5e7eb; padding:0;
 }
 .rv-star.on{ color:#f59e0b; }
 .rv-star:focus{ outline:2px solid #b5121b33; border-radius:6px; }

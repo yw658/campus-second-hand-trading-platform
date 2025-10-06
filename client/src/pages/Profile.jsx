@@ -32,15 +32,16 @@ export default function Profile() {
                 setLoading(true);
 
                 // items I posted
-                const r1 = await fetch(`http://localhost:5002/api/items/seller/${userId}`);
+                const r1 = await fetch(`/api/items/seller/${userId}`);
+
                 const d1 = await r1.json();
 
                 // orders I bought (backend should populate('itemId'))
-                const r2 = await fetch(`http://localhost:5002/api/orders/user/${userId}`);
+                const r2 = await fetch(`/api/orders/user/${userId}`);
                 const d2 = await r2.json();
 
                 // my favorites (backend should populate('itemId'))
-                const r3 = await fetch(`http://localhost:5002/api/favorites/${userId}`);
+                const r3 = await fetch(`/api/favorites/${userId}`);
                 const d3 = await r3.json();
 
                 if (!cancelled) {

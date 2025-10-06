@@ -1,5 +1,4 @@
-// client/src/api/orders.js
-const BASE = 'http://localhost:5002';
+const BASE = '';
 
 export async function fetchMyOrders(userId) {
     const res = await fetch(`${BASE}/api/orders/user/${userId}`);

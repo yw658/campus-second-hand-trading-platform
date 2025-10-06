@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:5002';
+const BASE = '';
 
 export async function createReport({ itemId, reason }) {
     const token = localStorage.getItem('token');
