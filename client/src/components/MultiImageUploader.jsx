@@ -1,4 +1,3 @@
-// client/src/components/MultiImageUploader.jsx
 import { useRef, useState } from 'react';
 import '../styles/form.css';
 
@@ -7,7 +6,7 @@ export default function MultiImageUploader({ images, setImages, max = 9, prefix 
     const [uploading, setUploading] = useState(false);
 
     async function presign(filename, contentType) {
-        const resp = await fetch('http://localhost:5002/api/uploads/presign', {
+        const resp = await fetch('api/uploads/presign', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ filename, contentType, prefix }),

@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:5002';
+const BASE = '';
 
 export async function fetchSellerReviewSummary(sellerId) {
     const r = await fetch(`${BASE}/api/reviews/seller/${sellerId}/summary`);

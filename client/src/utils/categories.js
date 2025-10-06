@@ -1,6 +1,3 @@
-// client/src/utils/categories.js
-
-/** 顶部/侧边栏/搜索使用的“主类”清单（展示顺序） */
 export const HOME_CATEGORIES = [
     'Books', 'Textbooks',
     'Electronics', 'Phones', 'Laptops', 'Tablets', 'Cameras', 'Headphones',
@@ -12,7 +9,6 @@ export const HOME_CATEGORIES = [
     'Other',
 ];
 
-/** PostItem 下拉的分组选项（用于表单选择） */
 export const POST_CATEGORY_OPTIONS = [
     { group: 'Books', items: ['Books', 'Textbooks'] },
     { group: 'Electronics', items: ['Electronics', 'Phones', 'Laptops', 'Tablets', 'Cameras', 'Headphones', 'Consoles', 'Gaming'] },
@@ -22,11 +18,7 @@ export const POST_CATEGORY_OPTIONS = [
     { group: 'Others', items: ['Instruments', 'Tickets', 'Other'] },
 ];
 
-/* ========================
- *   语义映射 & 父子关系
- * =======================*/
 
-/** 搜索/标题里的常见别名 → 主类 */
 const ALIAS_TO_MAIN = {
     // Books
     book: 'Books', books: 'Books',
@@ -66,42 +58,30 @@ const ALIAS_TO_MAIN = {
     other: 'Other', misc: 'Other',
 };
 
-/**
- * 父类包含子类（严格区分版：不再让 Clothing 包含 Beauty，也不让 Beauty 被 Clothing 吸收）
- * 只保留真正的层级：Books→Textbooks、Electronics→其电子子类、Home→(Furniture/Appliances)、Sports→(Outdoors/Bikes)
- */
+
 const PARENTS = {
     Electronics: ['Phones', 'Laptops', 'Tablets', 'Cameras', 'Headphones', 'Consoles', 'Gaming'],
     Books: ['Textbooks'],
     Home: ['Furniture', 'Appliances'],
     Sports: ['Outdoors', 'Bikes'],
-    // ❌ 不再有 Clothing: ['Shoes','Beauty']；Clothing、Shoes、Beauty 互不包含
 };
-
-/* ========================
- *   推断逻辑
- * =======================*/
 
 const toKey = (s) => String(s || '').trim().toLowerCase();
 
-/** 将任意原始分类/关键词标准化为主类 */
 export function normalizeCategory(raw) {
     if (!raw) return 'Other';
     const k = toKey(raw);
     if (ALIAS_TO_MAIN[k]) return ALIAS_TO_MAIN[k];
 
-    // 单复数简化：shoes → shoe
     const stem = k.endsWith('s') ? k.slice(0, -1) : k;
     if (ALIAS_TO_MAIN[stem]) return ALIAS_TO_MAIN[stem];
 
-    // 直接命中主类
     const direct = HOME_CATEGORIES.find((x) => toKey(x) === k);
     if (direct) return direct;
 
     return 'Other';
 }
 
-/** 预编译别名正则（整词匹配，避免误伤） */
 const RX_MAP = Object.fromEntries(
     Object.keys(ALIAS_TO_MAIN).map((alias) => [
         alias,
@@ -109,7 +89,6 @@ const RX_MAP = Object.fromEntries(
     ])
 );
 
-/** 从文本（标题/品牌/描述/标签）里推断可能类目 */
 export function inferCategoriesFromText(text) {
     const t = String(text || '');
     const hinted = new Set();
@@ -119,16 +98,16 @@ export function inferCategoriesFromText(text) {
     return hinted;
 }
 
-/**
- * 判断 item 是否属于 selected：
- * 1) 若 item.category 命中 selected 或 selected 的子类 → true
- * 2) 若没有明确分类，则用标题/品牌/描述/标签推断；严格区分 Clothing 与 Beauty
- */
+
 export function belongsToCategory(item, selected) {
     if (!selected) return true;
     const wanted = normalizeCategory(selected);
 
-    // 明确写了分类
+    if (wanted === 'Other') {
+        const main = normalizeCategory(item?.category);
+        return main === 'Other';
+    }
+
     const main = normalizeCategory(item?.category);
     if (main && main !== 'Other') {
         if (main === wanted) return true;
@@ -136,7 +115,6 @@ export function belongsToCategory(item, selected) {
         return false;
     }
 
-    // 无明确分类 → 文本/标签推断
     const text = [
         item?.title || '',
         item?.brand || '',
@@ -147,7 +125,6 @@ export function belongsToCategory(item, selected) {
     const hints = inferCategoriesFromText(text);
     if (hints.has(wanted)) return true;
 
-    // 仅对存在父子的条目进行父类包含判断（Clothing 与 Beauty 不互含）
     for (const c of hints) {
         if (PARENTS[wanted]?.includes(c)) return true;
     }

@@ -1,4 +1,3 @@
-// client/src/pages/PostItem.jsx
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles/form.css';
@@ -8,15 +7,13 @@ import MultiImageUploader from '../components/MultiImageUploader';
 export default function PostItem() {
     const nav = useNavigate();
     const [params] = useSearchParams();
-    const editId = params.get('id'); // 有 id 即为编辑模式
+    const editId = params.get('id');
     const isEdit = !!editId;
 
-    // 当前登录用户（用于传 sellerId）
     const me = JSON.parse(localStorage.getItem('user') || '{}');
     const sellerId = me?._id;
     const token = localStorage.getItem('token');
 
-    // 基本字段
     const [title, setTitle] = useState('');
     const [brand, setBrand] = useState('');
     const [price, setPrice] = useState('');
@@ -26,19 +23,17 @@ export default function PostItem() {
     const [tags, setTags] = useState('');
     const [description, setDescription] = useState('');
     const [images, setImages] = useState([]);
-    const [loading, setLoading] = useState(isEdit); // 编辑模式初始 loading
+    const [loading, setLoading] = useState(isEdit);
 
-    // 读取要编辑的旧数据
     useEffect(() => {
         if (!isEdit) return;
         (async () => {
             try {
                 setLoading(true);
-                const r = await fetch(`http://localhost:5002/api/items/${editId}`);
+                const r = await fetch(`/api/items/${editId}`);
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 const it = await r.json();
 
-                // 只有本人可编辑（前端先挡一下，后端仍有鉴权）
                 if (String(it?.sellerId?._id || it?.sellerId) !== String(sellerId || '')) {
                     alert('You can only edit your own item.');
                     nav(`/items/${editId}`, { replace: true });
@@ -64,7 +59,6 @@ export default function PostItem() {
         })();
     }, [isEdit, editId, sellerId, nav]);
 
-    // 原价校验提示
     const priceNum = useMemo(() => Number(price) || 0, [price]);
     const oriNum = useMemo(() => (originalPrice ? Number(originalPrice) : undefined), [originalPrice]);
     const priceError = useMemo(() => {
@@ -101,7 +95,7 @@ export default function PostItem() {
         };
 
         try {
-            const url = isEdit ? `http://localhost:5002/api/items/${editId}` : 'http://localhost:5002/api/items';
+            const url = isEdit ? `/api/items/${editId}` : `/api/items`;
             const method = isEdit ? 'PUT' : 'POST';
 
             const res = await fetch(url, {
@@ -145,7 +139,6 @@ export default function PostItem() {
             </div>
 
             <form className="form-card" id="post-form" onSubmit={onSubmit}>
-                {/* 基本信息 */}
                 <section className="form-section">
                     <h3 className="section-title">Basic Info</h3>
 
@@ -252,13 +245,11 @@ export default function PostItem() {
                     </div>
                 </section>
 
-                {/* 多图上传（S3 直传 or 外链） */}
                 <section className="form-section">
                     <h3 className="section-title">Photos</h3>
                     <MultiImageUploader images={images} setImages={setImages} max={9} prefix="items" />
                 </section>
 
-                {/* 描述 */}
                 <section className="form-section">
                     <h3 className="section-title">Description</h3>
                     <div className="field">
