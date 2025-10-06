@@ -25,21 +25,27 @@ const PORT = Number(process.env.PORT || 5002);
 app.set('trust proxy', 1);
 app.use(helmet());
 
-// --- CORS
+// --- CORS (allowlist from env, allow no-origin like curl/healthz, handle preflight) ---
 const allowlist = (process.env.CORS_ORIGIN || '')
     .split(',')
     .map(s => s.trim())
     .filter(Boolean);
 
-app.use(cors({
+const corsOpts = {
     origin(origin, cb) {
-        if (!origin || allowlist.length === 0 || allowlist.includes(origin)) return cb(null, true);
-        return cb(new Error('Not allowed by CORS'));
+        if (!origin) return cb(null, true); // curl / 健康检查
+        if (allowlist.length === 0 || allowlist.includes(origin)) return cb(null, true);
+        return cb(null, false); // 不抛异常，避免 500
     },
     credentials: true,
-    methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'],
-    allowedHeaders: ['Content-Type','Authorization']
-}));
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOpts));
+app.options('*', cors(corsOpts));
 
 // --- Body Parser ---
 app.use(express.json({ limit: '2mb' }));
@@ -76,7 +82,6 @@ app.use((req, res) => {
 app.use((err, _req, res, _next) => {
     const status = err.status || 500;
     const message = err.message || 'Internal Server Error';
-    // 仅在服务器打印详细错误
     console.error('[Error]', message, err?.stack || '');
     res.status(status).json({ message });
 });
@@ -90,13 +95,12 @@ async function start() {
         const uri = process.env.MONGODB_URI;
         if (!uri) throw new Error('MONGODB_URI is missing in .env');
 
-        // connect MongoDB
         await mongoose.connect(uri);
         console.log('[MongoDB] Connected.');
-        
+
         mongoose.connection.on('error', (e) => console.error('[MongoDB error]', e?.message || e));
         mongoose.connection.on('disconnected', () => console.warn('[MongoDB] disconnected'));
-        
+
         server = app.listen(PORT, () => console.log(`[HTTP] Server running on :${PORT}`));
     } catch (err) {
         console.error('[Startup Error]', err?.message || err);
