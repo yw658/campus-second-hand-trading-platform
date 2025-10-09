@@ -1,3 +1,4 @@
+// client/src/pages/Admin.jsx
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/admin.css';
@@ -16,7 +17,7 @@ export default function Admin() {
     const token = localStorage.getItem('token');
     const me = JSON.parse(localStorage.getItem('user') || '{}');
 
-    // guard: 非管理员踢回首页
+    // guard
     useEffect(() => {
         if (!token || !me?.isAdmin) navigate('/', { replace: true });
     }, [token, me, navigate]);
@@ -159,9 +160,9 @@ export default function Admin() {
                                         </td>
                                         <td style={{maxWidth:360, whiteSpace:'pre-wrap'}}>{r.reason}</td>
                                         <td>
-                      <span className={`badge ${r.status==='pending'?'badge--warn': r.status==='dismissed'?'badge--muted':'badge--ok'}`}>
-                        {r.status}
-                      </span>
+                        <span className={`badge ${r.status==='pending'?'badge--warn': r.status==='dismissed'?'badge--muted':'badge--ok'}`}>
+                          {r.status}
+                        </span>
                                         </td>
                                         <td>{new Date(r.createdAt).toLocaleString()}</td>
                                         <td className="actions-col">
@@ -207,15 +208,24 @@ export default function Admin() {
                                             <img className="cell-thumb" src={it.image || 'https://via.placeholder.com/56x56?text=No+Img'} alt="" />
                                             <div className="cell-item__meta">
                                                 <Link to={`/items/${it._id}`} className="link">{it.title}</Link>
-                                                <div className="muted">${typeof it.price==='number' ? it.price.toFixed(2) : '-'}</div>
+                                                <div className="muted">
+                                                    {typeof it.price==='number' ? `$${it.price.toFixed(2)}` : '-'}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
                                     <td>{it.sellerId?.username || '-'}</td>
                                     <td className="pill-row">
-                                        {it.isReported && <span className="pill pill--warn">reported</span>}
-                                        {it.isHidden && <span className="pill pill--danger">hidden</span>}
-                                        {it.isSold && <span className="pill">sold</span>}
+                      <span className={`pill ${ (it.pendingReportCount||0) > 0 ? 'pill--warn' : ''}`}>
+                        {(it.pendingReportCount||0)} pending
+                      </span>
+                                        <span className="pill">{(it.reportCount||0)} total</span>
+                                        <span className={`pill ${it.isHidden ? 'pill--danger' : ''}`}>
+                        {it.isHidden ? 'hidden' : 'visible'}
+                      </span>
+                                        <span className="pill">
+                        {it.isSold ? 'sold' : 'available'}
+                      </span>
                                     </td>
                                     <td>{new Date(it.createdAt).toLocaleString()}</td>
                                     <td className="actions-col">
