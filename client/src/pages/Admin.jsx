@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../styles/admin.css';
 import { adminListUsers, adminListItems, adminHideItem, adminUnhideItem } from '../api/admin';
@@ -16,7 +16,7 @@ export default function Admin() {
     const token = localStorage.getItem('token');
     const me = JSON.parse(localStorage.getItem('user') || '{}');
 
-    // guard
+    // guard: 非管理员踢回首页
     useEffect(() => {
         if (!token || !me?.isAdmin) navigate('/', { replace: true });
     }, [token, me, navigate]);
@@ -159,9 +159,9 @@ export default function Admin() {
                                         </td>
                                         <td style={{maxWidth:360, whiteSpace:'pre-wrap'}}>{r.reason}</td>
                                         <td>
-                        <span className={`badge ${r.status==='pending'?'badge--warn': r.status==='dismissed'?'badge--muted':'badge--ok'}`}>
-                          {r.status}
-                        </span>
+                      <span className={`badge ${r.status==='pending'?'badge--warn': r.status==='dismissed'?'badge--muted':'badge--ok'}`}>
+                        {r.status}
+                      </span>
                                         </td>
                                         <td>{new Date(r.createdAt).toLocaleString()}</td>
                                         <td className="actions-col">
@@ -171,7 +171,6 @@ export default function Admin() {
                                                     <button className="btn" onClick={()=>onDismiss(r._id)}>Dismiss</button>
                                                 </>
                                             )}
-                                            {/* Hide/Unhide are independent of report status */}
                                             {!item.isHidden ? (
                                                 <button className="btn btn--ghost" onClick={()=>onHide(item._id)}>Hide Item</button>
                                             ) : (
