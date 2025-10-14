@@ -31,7 +31,7 @@ router.get('/users', requireAuth, requireAdmin, async (_req, res) => {
     res.json(users);
 });
 
-// Items list (admin overview; 不做隐藏过滤，方便审查全部)
+// Items list
 router.get('/items', requireAuth, requireAdmin, async (_req, res) => {
     const items = await Item.find()
         .populate('sellerId', 'username email')
@@ -39,7 +39,7 @@ router.get('/items', requireAuth, requireAdmin, async (_req, res) => {
     res.json(items);
 });
 
-// Reports list（支持 ?status=pending|resolved|dismissed；不传则全部）
+// Reports list
 router.get('/reports', requireAuth, requireAdmin, async (req, res) => {
     const { status } = req.query;
     const filter = {};
@@ -86,9 +86,6 @@ router.patch('/users/:id/unban', requireAuth, requireAdmin, async (req, res) => 
     }
 });
 
-/* ===========================
- * Items: hide / unhide （真正控制前台可见性）
- * =========================== */
 router.patch('/items/:id/hide', requireAuth, requireAdmin, async (req, res) => {
     try {
         assertObjectId(req.params.id, 'item id');
@@ -119,20 +116,12 @@ router.patch('/items/:id/unhide', requireAuth, requireAdmin, async (req, res) =>
     }
 });
 
-/* ===========================
- * Reports moderation（审核举报）
- * ===========================
- * - resolve：采纳举报，标记 report.status='resolved' + report.resolvedAt
- *             同时把 Item.isReported = true（仅标记，不自动隐藏）
- * - dismiss： 驳回举报，status='dismissed' + resolvedAt
- */
 router.patch('/reports/:id/resolve', requireAuth, requireAdmin, async (req, res) => {
     try {
         assertObjectId(req.params.id, 'report id');
         const report = await Report.findById(req.params.id);
         if (!report) return res.status(404).json({ message: 'Report not found' });
 
-        // 标记 item 被举报（仅标记，不隐藏）
         if (report.itemId) {
             await Item.findByIdAndUpdate(report.itemId, { $set: { isReported: true } });
         }

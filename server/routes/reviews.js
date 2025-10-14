@@ -9,9 +9,9 @@ const router = express.Router();
 const isId = (x) => mongoose.Types.ObjectId.isValid(x);
 const SAFE_FILTER = { isHidden: { $ne: true }, isReported: { $ne: true } };
 
-/* ============== 创建 / 修改 / 删除 ============== */
+/* ============== Create / Update / Delete ============== */
 
-// 创建评价（鉴权）
+// Create a review (auth required)
 router.post('/', requireAuth, async (req, res) => {
     try {
         const { itemId, rating, content = '', images = [] } = req.body || {};
@@ -22,14 +22,12 @@ router.post('/', requireAuth, async (req, res) => {
             return res.status(400).json({ message: 'rating must be between 1 and 5' });
         }
 
-        // 查重
         const existed = await Review.findOne({
             itemId: new mongoose.Types.ObjectId(itemId),
             userId: new mongoose.Types.ObjectId(userId),
         }).select('_id').lean();
 
         if (existed) {
-            // ⚠️ 一定返回 reviewId，前端才能 PATCH
             return res.status(409).json({
                 message: 'You have already reviewed this item',
                 reviewId: existed._id,
@@ -59,7 +57,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 });
 
-// 更新评价（作者或管理员）
+// Update a review (author or admin)
 router.patch('/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
@@ -85,7 +83,7 @@ router.patch('/:id', requireAuth, async (req, res) => {
     }
 });
 
-// 删除评价
+// Delete a review (author or admin)
 router.delete('/:id', requireAuth, async (req, res) => {
     try {
         const { id } = req.params;
@@ -100,9 +98,9 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
 });
 
-/* ============== 查询 ============== */
+/* ============== Queries ============== */
 
-// 商品的全部评价
+// All reviews for an item
 router.get('/item/:itemId', async (req, res) => {
     try {
         const { itemId } = req.params;
@@ -122,7 +120,7 @@ router.get('/item/:itemId', async (req, res) => {
     }
 });
 
-// 某用户写过的所有评价
+// All reviews written by a user
 router.get('/user/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -142,7 +140,7 @@ router.get('/user/:userId', async (req, res) => {
     }
 });
 
-// 卖家收到的所有评价（分页）
+// Reviews received by a seller
 router.get('/seller/:sellerId', async (req, res) => {
     try {
         const { sellerId } = req.params;
@@ -151,6 +149,7 @@ router.get('/seller/:sellerId', async (req, res) => {
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 20, 1), 50);
 
+        // fetch all items of the seller
         const itemIds = await Item.find({ sellerId: new mongoose.Types.ObjectId(sellerId) })
             .select('_id title image images')
             .lean();
@@ -166,6 +165,7 @@ router.get('/seller/:sellerId', async (req, res) => {
             ...SAFE_FILTER,
         };
 
+        // fetch reviews + count
         const [items, total] = await Promise.all([
             Review.find(match)
                 .sort({ createdAt: -1 })
@@ -175,10 +175,12 @@ router.get('/seller/:sellerId', async (req, res) => {
             Review.countDocuments(match),
         ]);
 
+        // fetch buyer users
         const buyerIds = Array.from(new Set(items.map(r => String(r.userId)))).map(id => new mongoose.Types.ObjectId(id));
         const buyers = await User.find({ _id: { $in: buyerIds } }).select('_id username name').lean();
         const buyerMap = new Map(buyers.map(u => [String(u._id), u]));
 
+        // merge item and buyer details into reviews
         const merged = items.map(r => ({
             ...r,
             item: idMap.get(String(r.itemId)) || null,

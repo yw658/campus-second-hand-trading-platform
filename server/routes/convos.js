@@ -1,4 +1,3 @@
-// routes/convos.js
 const express = require('express');
 const router = express.Router();
 
@@ -7,13 +6,12 @@ const Message = require('../models/Message');
 const Item = require('../models/Item');
 const { requireAuth } = require('../middleware/auth');
 
-/**
- * 创建/打开会话
- * POST /api/convos
- * body: { itemId, buyerId? }
- * - 默认当前用户为 buyer（从商品页“联系卖家”发起）
- * - 若当前用户是卖家发起，必须传 buyerId
- */
+// -------------------------------
+// Create or get a conversation
+// POST /api/convos
+// - Buyer: only need itemId
+// - Seller: need itemId + buyerId
+// -------------------------------
 router.post('/', requireAuth, async (req, res) => {
     try {
         const userId = req.user._id.toString();
@@ -29,18 +27,20 @@ router.post('/', requireAuth, async (req, res) => {
 
         let realBuyerId = userId;
 
-        // 卖家端发起需要 buyerId
+        // if seller creates convo, must specify buyerId
         if (userId === sellerId) {
             if (!buyerId) return res.status(400).json({ message: 'buyerId required when seller initiates' });
             realBuyerId = buyerId.toString();
             if (realBuyerId === sellerId) return res.status(400).json({ message: 'Seller cannot talk to self' });
         }
 
+        // upsert convo
         const query = { itemId, buyerId: realBuyerId, sellerId };
         const update = { $setOnInsert: { itemId, buyerId: realBuyerId, sellerId, lastMsgAt: new Date() } };
 
         const convo = await Conversation.findOneAndUpdate(query, update, { upsert: true, new: true });
 
+        // populate with related info
         const populated = await Conversation.findById(convo._id)
             .populate('itemId', 'title price image sellerId')
             .populate('buyerId', 'username email')
@@ -49,7 +49,7 @@ router.post('/', requireAuth, async (req, res) => {
         res.json(populated);
     } catch (err) {
         if (err.code === 11000) {
-            // 并发兜底：已存在则返回
+            // handle duplicate key race condition
             const exists = await Conversation.findOne({
                 itemId: req.body.itemId,
                 buyerId: req.body.buyerId || req.user._id,
@@ -60,11 +60,10 @@ router.post('/', requireAuth, async (req, res) => {
     }
 });
 
-/**
- * 获取我的会话列表
- * GET /api/convos?role=buyer|seller&page=1&pageSize=20
- * 默认 role=all（买+卖）
- */
+// -------------------------------
+// Get my conversation list
+// GET /api/convos?role=buyer|seller&page=1&pageSize=20
+// -------------------------------
 router.get('/', requireAuth, async (req, res) => {
     const userId = req.user._id.toString();
     const { role = 'all', page = 1, pageSize = 20 } = req.query;
@@ -90,11 +89,11 @@ router.get('/', requireAuth, async (req, res) => {
     res.json({ rows, total, page: Number(page), pageSize: Number(pageSize) });
 });
 
-/**
- * 获取会话消息（分页）
- * GET /api/convos/:id/messages?page=1&pageSize=30
- * 参与者校验
- */
+// -------------------------------
+// Get messages of a conversation
+// GET /api/convos/:id/messages?page=1&pageSize=30
+// Only participants can access
+// -------------------------------
 router.get('/:id/messages', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { page = 1, pageSize = 30 } = req.query;
@@ -115,14 +114,11 @@ router.get('/:id/messages', requireAuth, async (req, res) => {
     res.json({ rows, total, page: Number(page), pageSize: Number(pageSize) });
 });
 
-/**
- * 发送消息
- * POST /api/convos/:id/messages
- * body: { text }
- * - 校验参与者
- * - 创建消息（readBy 包含 sender）
- * - 更新会话 lastMsgAt / lastMsgText
- */
+// -------------------------------
+// Send a message
+// POST /api/convos/:id/messages
+// body: { text }
+// -------------------------------
 router.post('/:id/messages', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { text } = req.body;
@@ -138,6 +134,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     if (userId !== buyerId && userId !== sellerId)
         return res.status(403).json({ message: 'Forbidden' });
 
+    // create message
     const msg = await Message.create({
         convoId: id,
         senderId: userId,
@@ -145,6 +142,7 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
         readBy: [userId],
     });
 
+    // update convo meta
     convo.lastMsgAt = new Date();
     convo.lastMsgText = text.slice(0, 120);
     await convo.save();
@@ -152,11 +150,10 @@ router.post('/:id/messages', requireAuth, async (req, res) => {
     res.status(201).json(msg);
 });
 
-/**
- * 标记已读
- * PATCH /api/convos/:id/read
- * 把对方发的且未读的消息加上当前用户
- */
+// -------------------------------
+// Mark all messages as read
+// PATCH /api/convos/:id/read
+// -------------------------------
 router.patch('/:id/read', requireAuth, async (req, res) => {
     const { id } = req.params;
     const userId = req.user._id.toString();
@@ -169,6 +166,7 @@ router.patch('/:id/read', requireAuth, async (req, res) => {
     if (userId !== buyerId && userId !== sellerId)
         return res.status(403).json({ message: 'Forbidden' });
 
+    // mark all opponent's messages as read
     const result = await Message.updateMany(
         { convoId: id, senderId: { $ne: userId }, readBy: { $ne: userId } },
         { $addToSet: { readBy: userId } }

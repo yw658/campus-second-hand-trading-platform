@@ -1,15 +1,9 @@
-// backend/routes/items.js
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 const Item = require('../models/Item');
 const Favorite = require('../models/Favorite');
 
-/* ========================
- *  分类映射 / 工具
- * =======================*/
-
-// 父类包含自身，便于 $in
 const CATEGORY_TREE = {
     // Electronics family
     Electronics: ['Electronics', 'Phones', 'Laptops', 'Tablets', 'Cameras', 'Headphones', 'Consoles', 'Gaming'],
@@ -35,7 +29,7 @@ const CATEGORY_TREE = {
     Outdoors: ['Outdoors'],
     Bikes: ['Bikes'],
 
-    // Others (互不包含)
+    // Others
     Clothing: ['Clothing'],
     Shoes: ['Shoes'],
     Beauty: ['Beauty'],
@@ -44,10 +38,8 @@ const CATEGORY_TREE = {
     Other: ['Other'],
 };
 
-// 主类清单（用于 Other 特例）
 const ALL_MAIN_CATS = Object.keys(CATEGORY_TREE);
 
-// 别名/型号 → 主类（注意：iphone 在 NEVER_MAP 中禁掉映射）
 const ALIAS_TO_MAIN = {
     // Books
     book: 'Books', books: 'Books',
@@ -89,7 +81,6 @@ const ALIAS_TO_MAIN = {
     other: 'Other', misc: 'Other',
 };
 
-// 这些词即使在 ALIAS_TO_MAIN 里，也不做类目映射（“只当关键词”）
 const NEVER_MAP = new Set(['iphone']);
 
 const toKey = (s='') => String(s).trim().toLowerCase();
@@ -99,13 +90,11 @@ const toTitleCase = (s='') => {
     return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 };
 
-// 创建时分类规范化
 function normalizeCategory(raw) {
     const c = toTitleCase(raw);
     return CATEGORY_TREE[c] ? c : 'Other';
 }
 
-// 搜索词 → 主类名（如 "textbook"→"Textbooks"，否则 ''）
 function normalizeCategoryFromSearch(raw) {
     if (!raw) return '';
     const k = toKey(raw);
@@ -118,16 +107,11 @@ function normalizeCategoryFromSearch(raw) {
     return direct || '';
 }
 
-// 转义正则元字符
 function escapeRe(s) {
     return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/**
- * 构建“词边界”正则。
- * - 默认只匹配独立单词，避免 switch→switches 的误命中
- * - token === 'iphone' 时，允许常见型号后缀（14 / Pro / Pro Max / SE / XR / XS Max 等）
- */
+
 function buildWordRegex(q, { allowSimplePlural = true } = {}) {
     const token = String(q).trim();
     const core = escapeRe(token);
@@ -135,7 +119,7 @@ function buildWordRegex(q, { allowSimplePlural = true } = {}) {
     if (token.toLowerCase() === 'iphone') {
         const suffix =
             '(?:\\s*[\\-/]?\\s*(?:' +
-            '\\d{1,2}' +                 // 10~15 等
+            '\\d{1,2}' +                 // 10~15
             '|se\\s*\\d?' +              // SE / SE2
             '|x|xr|xs(?:\\s*max)?' +     // X / XR / XS / XS Max
             '|plus|max|mini' +           // Plus / Max / Mini
@@ -152,7 +136,6 @@ function buildWordRegex(q, { allowSimplePlural = true } = {}) {
     return new RegExp(`(^|[^A-Za-z0-9])${core}${tail}($|[^A-Za-z0-9])`, 'i');
 }
 
-/** 普通类目与 Other 特例过滤 */
 function buildCategoryFilterObject(wanted) {
     if (wanted !== 'Other') {
         const cats = CATEGORY_TREE[wanted] || [wanted];
@@ -168,9 +151,6 @@ function buildCategoryFilterObject(wanted) {
     };
 }
 
-/* ========================
- *  路由
- * =======================*/
 
 /* ========== Create Item ========== */
 router.post('/', async (req, res) => {
@@ -226,7 +206,6 @@ router.post('/', async (req, res) => {
     }
 });
 
-/* ========== 列表（支持 forYou；售出排后；含 Other 兜底） ========== */
 // GET /api/items?search=&category=&page=&pageSize=&sort=&strict=0
 router.get('/', async (req, res) => {
     try {
@@ -239,38 +218,32 @@ router.get('/', async (req, res) => {
             strict = '0',
         } = req.query;
 
-        // 轻日志看清前端到底传了什么
         console.log('[GET /api/items] q=', { search, category, page, pageSize, sort, strict });
 
         const p = Math.max(parseInt(page, 10) || 1, 1);
         const ps = Math.min(Math.max(parseInt(pageSize, 10) || 12, 1), 48);
         const simplePlural = strict !== '1';
 
-        // 基础过滤：排除被举报/隐藏
         const baseFilter = { isReported: { $ne: true }, isHidden: { $ne: true } };
 
-        // 分类参数（父类包含子类；Other 有特例）
         let explicitWanted = '';
         if (category) {
             explicitWanted = toTitleCase(category);
             Object.assign(baseFilter, buildCategoryFilterObject(explicitWanted));
         }
 
-        // 统一排序：未售优先
         let sortSpec;
         if (sort === 'priceAsc') sortSpec = { isSold: 1, price: 1, createdAt: -1 };
         else if (sort === 'priceDesc') sortSpec = { isSold: 1, price: -1, createdAt: -1 };
         else if (sort === 'forYou') sortSpec = { isSold: 1, createdAt: -1 };
         else sortSpec = { isSold: 1, createdAt: -1 };
 
-        // 无搜索词
         if (!search.trim()) {
             const [items, total] = await Promise.all([
                 Item.find(baseFilter).sort(sortSpec).skip((p - 1) * ps).limit(ps),
                 Item.countDocuments(baseFilter),
             ]);
 
-            // 兜底：forYou + （明确要 Other）且结果空 → 用 Other 特例再查一次
             if (sort === 'forYou' && (!items || items.length === 0) && explicitWanted === 'Other') {
                 const otherFilter = { isReported: { $ne: true }, isHidden: { $ne: true }, ...buildCategoryFilterObject('Other') };
                 const [f2, t2] = await Promise.all([
@@ -283,7 +256,6 @@ router.get('/', async (req, res) => {
             return res.json({ page: p, pageSize: ps, total, items });
         }
 
-        // 搜索词 → 是否映射为类目
         const mapped = normalizeCategoryFromSearch(search);
         if (mapped) {
             const mappedFilter = buildCategoryFilterObject(mapped);
@@ -294,7 +266,6 @@ router.get('/', async (req, res) => {
                 Item.countDocuments(filter),
             ]);
 
-            // 兜底：forYou +（显式要 Other 或 搜索映射到 Other）且结果空 → 再用 Other 特例
             if (sort === 'forYou' && (!items || items.length === 0) && (explicitWanted === 'Other' || mapped === 'Other')) {
                 const otherFilter = { isReported: { $ne: true }, isHidden: { $ne: true }, ...buildCategoryFilterObject('Other') };
                 const [f2, t2] = await Promise.all([
@@ -307,7 +278,6 @@ router.get('/', async (req, res) => {
             return res.json({ page: p, pageSize: ps, total, items });
         }
 
-        // 普通关键词：仅在【标题/品牌】做词边界（多词 AND；支持 "短语"）
         const phraseMatches = [...search.matchAll(/"([^"]+)"/g)].map(m => m[1].trim()).filter(Boolean);
         const rest = search.replace(/"[^"]*"/g, ' ').trim();
         const words = rest.split(/\s+/).filter(Boolean);
@@ -331,7 +301,6 @@ router.get('/', async (req, res) => {
             Item.countDocuments(filter),
         ]);
 
-        // 兜底：forYou + 明确要 Other（通过 category=Other 传入）且结果空 → Other 特例再查一次
         if (sort === 'forYou' && (!items || items.length === 0) && explicitWanted === 'Other') {
             const otherFilter = { isReported: { $ne: true }, isHidden: { $ne: true }, ...buildCategoryFilterObject('Other') };
             const [f2, t2] = await Promise.all([
@@ -349,7 +318,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-/* ========== For You 专用（前端 For You 卡片用） ========== */
 // GET /api/items/for-you?category=Other&size=8
 router.get('/for-you', async (req, res) => {
     try {
@@ -370,7 +338,6 @@ router.get('/for-you', async (req, res) => {
             .limit(n)
             .lean();
 
-        // 兜底：明确要 Other 但结果为空 → 再用 Other 特例（防止大小写/拼写异）
         if ((!items || items.length === 0) && toTitleCase(category) === 'Other') {
             const otherFilter = { isReported: { $ne: true }, isHidden: { $ne: true }, ...buildCategoryFilterObject('Other') };
             items = await Item.find(otherFilter)
@@ -386,7 +353,6 @@ router.get('/for-you', async (req, res) => {
     }
 });
 
-/* ========== Items by Seller（未售优先） ========== */
 // GET /api/items/seller/:sellerId?status=active|sold|all
 router.get('/seller/:sellerId', async (req, res) => {
     try {
