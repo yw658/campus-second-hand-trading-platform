@@ -33,9 +33,9 @@ const allowlist = (process.env.CORS_ORIGIN || '')
 
 const corsOpts = {
     origin(origin, cb) {
-        if (!origin) return cb(null, true); // curl / 健康检查
+        if (!origin) return cb(null, true);
         if (allowlist.length === 0 || allowlist.includes(origin)) return cb(null, true);
-        return cb(null, false); // 不抛异常，避免 500
+        return cb(null, false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

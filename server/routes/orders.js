@@ -1,4 +1,3 @@
-// backend/routes/orders.js
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
@@ -7,7 +6,7 @@ const Order = require('../models/Order');
 const Item = require('../models/Item');
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
-const Review = require('../models/Review'); // ⭐ 新增：用于计算 hasReviewed
+const Review = require('../models/Review');
 
 /**
  * Create order
@@ -91,14 +90,12 @@ router.get('/user/:userId', async (req, res) => {
         }
         const buyerOid = new mongoose.Types.ObjectId(userId);
 
-        // 先把订单拉出来
         const orders = await Order.find({ buyerId: buyerOid })
             .sort({ createdAt: -1 })
             .populate('itemId', 'title image images isSold price sellerId')
             .populate('sellerId', 'username')
             .lean();
 
-        // 把所有 itemId 收集并批量查询当前用户是否评过
         const itemIds = Array.from(
             new Set(
                 orders

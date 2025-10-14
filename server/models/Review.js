@@ -1,4 +1,3 @@
-// backend/models/Review.js
 const mongoose = require('mongoose');
 
 const ReviewSchema = new mongoose.Schema(
@@ -36,9 +35,7 @@ const ReviewSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-// 唯一约束：一个用户只能对一个商品评价一次
 ReviewSchema.index({ itemId: 1, userId: 1 }, { unique: true });
-// 常用索引
 ReviewSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Review', ReviewSchema);

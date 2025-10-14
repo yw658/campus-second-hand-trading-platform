@@ -1,14 +1,13 @@
-// backend/routes/favorites.js
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 const Favorite = require('../models/Favorite');
 
-/**
- * 添加收藏（幂等）
- * POST /api/favorites  body: { userId, itemId }
- * 若已存在，返回 200，不报错
- */
+// ---------------------------------------
+// Create favorite (idempotent)
+// POST /api/favorites
+// body: { userId, itemId }
+// ---------------------------------------
 router.post('/', async (req, res) => {
     try {
         const { userId, itemId } = req.body || {};
@@ -22,7 +21,7 @@ router.post('/', async (req, res) => {
         const uid = new mongoose.Types.ObjectId(userId);
         const iid = new mongoose.Types.ObjectId(itemId);
 
-        // 幂等：先查是否存在
+        // idempotent: return existing if already favorited
         const existing = await Favorite.findOne({ userId: uid, itemId: iid });
         if (existing) {
             return res.status(200).json({ message: 'Already favorited', favorite: existing });
@@ -31,7 +30,6 @@ router.post('/', async (req, res) => {
         const favorite = await Favorite.create({ userId: uid, itemId: iid });
         return res.status(201).json({ message: 'Item favorited', favorite });
     } catch (err) {
-        // 若使用了唯一索引，第二次插入可能触发 11000，把它当作成功
         if (err && err.code === 11000) {
             return res.status(200).json({ message: 'Already favorited' });
         }
@@ -40,11 +38,12 @@ router.post('/', async (req, res) => {
     }
 });
 
-/**
- * 取消收藏（幂等）
- * DELETE /api/favorites  body: { userId, itemId }
- * 不管是否存在记录，都返回 200
- */
+// ---------------------------------------
+// Remove favorite (idempotent)
+// DELETE /api/favorites
+// body: { userId, itemId }
+// Always returns 200 regardless of prior existence
+// ---------------------------------------
 router.delete('/', async (req, res) => {
     try {
         const { userId, itemId } = req.body || {};
@@ -66,10 +65,10 @@ router.delete('/', async (req, res) => {
     }
 });
 
-/**
- * 获取某用户所有收藏（带 item 详情）
- * GET /api/favorites/:userId
- */
+// ---------------------------------------
+// Get all favorites for a user (with item populated)
+// GET /api/favorites/:userId
+// ---------------------------------------
 router.get('/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
@@ -86,11 +85,11 @@ router.get('/:userId', async (req, res) => {
     }
 });
 
-/**
- * 收藏状态查询（详情页按钮用）
- * GET /api/favorites/status?userId=&itemId=
- * 返回 { favorited: boolean }
- */
+// ---------------------------------------
+// Check favorite status for a user+item
+// GET /api/favorites/status?userId=&itemId=
+// returns: { favorited: boolean }
+// ---------------------------------------
 router.get('/status', async (req, res) => {
     try {
         const { userId, itemId } = req.query || {};
